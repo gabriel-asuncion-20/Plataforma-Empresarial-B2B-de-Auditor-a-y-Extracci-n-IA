@@ -58,6 +58,14 @@ public sealed class QuestPdfSampleGenerator : ISamplePdfGenerator
 
     public Task<IReadOnlyList<SamplePdfInfoDto>> EnsureSamplePdfsGeneratedAsync(CancellationToken ct = default)
     {
+        if (Specs.All(s =>
+            {
+                var p = Path.Combine(_samplesDir, s.FileName);
+                return File.Exists(p) && new FileInfo(p).Length > 1000;
+            }))
+        {
+            return Task.FromResult(GetAvailableSamplePdfs());
+        }
         GenerateInvoicePdf(
             Path.Combine(_samplesDir, Specs[0].FileName),
             invoiceNumber: "001-002-000045821",
