@@ -1,3 +1,4 @@
+using System.Globalization;
 using AuditAI.Application.Common.Interfaces;
 using AuditAI.Application.DTOs;
 using QuestPDF.Fluent;
@@ -222,9 +223,9 @@ public sealed class QuestPdfSampleGenerator : ISamplePdfGenerator
                         foreach (var item in items)
                         {
                             table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(6).Text(item.Description);
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(6).AlignRight().Text(item.Qty.ToString());
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(6).AlignRight().Text($"${item.UnitPrice:F2}");
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(6).AlignRight().Text($"${item.LineTotal:F2}");
+                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(6).AlignRight().Text(item.Qty.ToString(CultureInfo.InvariantCulture));
+                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(6).AlignRight().Text($"${item.UnitPrice.ToString("F2", CultureInfo.InvariantCulture)}");
+                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(6).AlignRight().Text($"${item.LineTotal.ToString("F2", CultureInfo.InvariantCulture)}");
                         }
                     });
 
@@ -233,17 +234,17 @@ public sealed class QuestPdfSampleGenerator : ISamplePdfGenerator
                         totals.Item().Row(r =>
                         {
                             r.RelativeItem().Text("Subtotal Base Imponible:");
-                            r.ConstantItem(90).AlignRight().Text($"${subtotal:F2}").SemiBold();
+                            r.ConstantItem(90).AlignRight().Text($"${subtotal.ToString("F2", CultureInfo.InvariantCulture)}").SemiBold();
                         });
                         totals.Item().PaddingTop(4).Row(r =>
                         {
-                            r.RelativeItem().Text($"{taxLabel} ({taxRatePercent:F0}%):");
-                            r.ConstantItem(90).AlignRight().Text($"${taxAmount:F2}").SemiBold();
+                            r.RelativeItem().Text($"{taxLabel} ({taxRatePercent.ToString("F0", CultureInfo.InvariantCulture)}%):");
+                            r.ConstantItem(90).AlignRight().Text($"${taxAmount.ToString("F2", CultureInfo.InvariantCulture)}").SemiBold();
                         });
                         totals.Item().PaddingTop(6).BorderTop(1).BorderColor(Colors.Grey.Medium).Row(r =>
                         {
                             r.RelativeItem().Text("VALOR TOTAL USD:").Bold().FontSize(11);
-                            r.ConstantItem(90).AlignRight().Text($"${totalAmount:F2}").Bold().FontSize(11).FontColor(Colors.Blue.Darken3);
+                            r.ConstantItem(90).AlignRight().Text($"${totalAmount.ToString("F2", CultureInfo.InvariantCulture)}").Bold().FontSize(11).FontColor(Colors.Blue.Darken3);
                         });
                     });
                 });
