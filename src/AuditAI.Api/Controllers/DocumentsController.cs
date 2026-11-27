@@ -15,8 +15,51 @@ public sealed record ReviewDocumentRequestDto(bool Approve, string? Notes);
 [Authorize]
 public sealed class DocumentsController(
     ICqrsDispatcher dispatcher,
-    IAuditDocumentRepository documentRepository) : ControllerBase
+    IAuditDocumentRepository documentRepository,
+    ISamplePdfGenerator samplePdfGenerator) : ControllerBase
 {
+    [HttpGet("samples")]
+    public ActionResult<IReadOnlyList<SamplePdfInfoDto>> GetSamples()
+        => Ok(samplePdfGenerator.GetAvailableSamplePdfs());
+
+    [HttpGet("samples/{fileName}/download")]
+    [AllowAnonymous]
+    public IActionResult DownloadSample(string fileName)
+    {
+        var cleanName = Path.GetFileName(fileName);
+        var repoRoot = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", ".."));
+        if (!Directory.Exists(Path.Combine(repoRoot, "sample-pdfs")))
+        {
+            repoRoot = Directory.GetCurrentDirectory();
+        }
+
+        var path = Path.Combine(repoRoot, "sample-pdfs", cleanName);
+        if (!System.IO.File.Exists(path))
+        {
+            return NotFound(new { message = "PDF de muestra no encontrado." });
+        }
+
+        return PhysicalFile(path, "application/pdf", cleanName);
+    }
+
+    [HttpPost("samples/{fileName}/enqueue")]
+    public async Task<ActionResult<AuditDocumentSummaryDto>> EnqueueSample(string fileName, CancellationToken ct)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = Guid.TryParse(userIdStr, out var parsed) ? parsed : Guid.Empty;
+        var userName = User.FindFirstValue(ClaimTypes.Name) ?? "Analista";
+
+        try
+        {
+            var summary = await dispatcher.SendCommandAsync<EnqueueSamplePdfCommand, AuditDocumentSummaryDto>(
+                new EnqueueSamplePdfCommand(fileName, userId, userName), ct);
+            return Accepted(summary);
+        }
+        catch (FileNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<AuditDocumentSummaryDto>>> GetAll(CancellationToken ct)
     {

@@ -3,6 +3,7 @@ using AuditAI.Api.Hubs;
 using AuditAI.Application;
 using AuditAI.Application.Common.Interfaces;
 using AuditAI.Infrastructure;
+using AuditAI.Infrastructure.Persistence;
 using AuditAI.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -92,6 +93,11 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 var app = builder.Build();
+
+if (!app.Configuration.GetValue<bool>("SkipStartupInitialization"))
+{
+    await DatabaseSeeder.InitializeAsync(app.Services);
+}
 
 app.UseSwagger();
 app.UseSwaggerUI(c =>

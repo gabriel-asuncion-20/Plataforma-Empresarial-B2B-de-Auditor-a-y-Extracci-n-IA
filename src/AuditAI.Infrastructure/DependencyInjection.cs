@@ -51,6 +51,7 @@ public static class DependencyInjection
         services.AddSingleton<IAuditQueue, AuditChannelQueue>();
         services.AddSingleton<IPdfStorageService>(_ => new LocalPdfStorageService(contentRootPath));
         services.AddSingleton<IPdfTextExtractor, PdfPigTextExtractor>();
+        services.AddSingleton<ISamplePdfGenerator>(_ => new QuestPdfSampleGenerator(contentRootPath));
 
         services.AddHttpClient<GeminiStructuredDocumentAnalyzer>(client =>
         {
