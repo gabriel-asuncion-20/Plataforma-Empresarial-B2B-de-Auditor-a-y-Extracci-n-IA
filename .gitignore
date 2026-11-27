@@ -1,0 +1,30 @@
+# Credentials & Local Environment (NEVER COMMIT)
+.env
+.env.*
+!.env.example
+appsettings.Development.json
+**/appsettings.Development.json
+**/appsettings.Local.json
+
+# .NET build artifacts
+bin/
+obj/
+out/
+publish/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+TestResults/
+
+# Node / Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+npm-debug.log*
+
+# OS / IDE
+.DS_Store
+Thumbs.db
