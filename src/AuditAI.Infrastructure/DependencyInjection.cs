@@ -1,11 +1,16 @@
 using AuditAI.Application.Common.Interfaces;
+using AuditAI.Infrastructure.AI;
+using AuditAI.Infrastructure.Background;
+using AuditAI.Infrastructure.Pdf;
 using AuditAI.Infrastructure.Persistence;
 using AuditAI.Infrastructure.Persistence.Repositories;
 using AuditAI.Infrastructure.Security;
 using AuditAI.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace AuditAI.Infrastructure;
 
@@ -17,6 +22,7 @@ public static class DependencyInjection
         string contentRootPath)
     {
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+        services.Configure<GeminiOptions>(configuration.GetSection(GeminiOptions.SectionName));
 
         var rawConn = configuration.GetConnectionString("DefaultConnection");
         if (string.IsNullOrWhiteSpace(rawConn) || rawConn.Contains("PEGA_AQUI", StringComparison.OrdinalIgnoreCase))
@@ -44,6 +50,22 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
         services.AddSingleton<IAuditQueue, AuditChannelQueue>();
         services.AddSingleton<IPdfStorageService>(_ => new LocalPdfStorageService(contentRootPath));
+        services.AddSingleton<IPdfTextExtractor, PdfPigTextExtractor>();
+
+        services.AddHttpClient<GeminiStructuredDocumentAnalyzer>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(60);
+        })
+        .ConfigurePrimaryHttpMessageHandler(sp =>
+        {
+            var opts = sp.GetRequiredService<IOptions<GeminiOptions>>().Value;
+            return Ipv4SocketsHttpHandlerFactory.Create(opts.PreferIpv4);
+        });
+
+        services.AddSingleton<IAiDocumentAnalyzer>(sp => sp.GetRequiredService<GeminiStructuredDocumentAnalyzer>());
+        services.AddSingleton<IChatClient>(sp => sp.GetRequiredService<GeminiStructuredDocumentAnalyzer>());
+
+        services.AddHostedService<AuditBackgroundWorker>();
 
         return services;
     }
